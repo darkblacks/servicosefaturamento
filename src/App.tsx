@@ -5,24 +5,6 @@ import { ServicesTable } from "./components/ServicesTable";
 import { ChartsSection } from "./components/ChartsSection";
 import type { ServiceRow, TipoOperacao } from "./types";
 
-function sumRows(rows: ServiceRow[], usandoSimulacao: boolean) {
-  return rows.reduce(
-    (acc, row) => {
-      const quantidade = usandoSimulacao
-        ? row.quantidadeTeorica
-        : row.quantidadeAtual;
-
-      const preco = usandoSimulacao ? row.precoTeorico : row.precoAtual;
-
-      acc.totalQuantidade += quantidade;
-      acc.totalValor += quantidade * preco;
-
-      return acc;
-    },
-    { totalQuantidade: 0, totalValor: 0 }
-  );
-}
-
 function App() {
   const [originalRows, setOriginalRows] = useState<ServiceRow[]>([]);
   const [editableRows, setEditableRows] = useState<ServiceRow[]>([]);
@@ -57,25 +39,9 @@ function App() {
     return editableRows.filter((row) => row.mes === mesSelecionado);
   }, [editableRows, mesSelecionado]);
 
-  const proprioRows = useMemo(() => {
-    return visibleRows.filter((row) => row.tipo === "proprio");
-  }, [visibleRows]);
-
-  const terceiroRows = useMemo(() => {
-    return visibleRows.filter((row) => row.tipo === "terceiro");
-  }, [visibleRows]);
-
   const tabelaRows = useMemo(() => {
     return visibleRows.filter((row) => row.tipo === tipoSelecionado);
   }, [visibleRows, tipoSelecionado]);
-
-  const proprioTotals = useMemo(() => {
-    return sumRows(proprioRows, usandoSimulacao);
-  }, [proprioRows, usandoSimulacao]);
-
-  const terceiroTotals = useMemo(() => {
-    return sumRows(terceiroRows, usandoSimulacao);
-  }, [terceiroRows, usandoSimulacao]);
 
   function handleChangeTheoretical(
     id: string,
@@ -125,7 +91,7 @@ function App() {
         <div className="page-header">
           <div>
             <h1>Dashboard Faturamento</h1>
-            <p>Dashboard de serviços e preços, original e teorico</p>
+            <p>Dashboard de serviços e preços, original e teórico</p>
           </div>
 
           <div className="actions">
@@ -150,9 +116,7 @@ function App() {
           </div>
         </div>
 
-        <DashboardCards
-          usandoSimulacao={usandoSimulacao}
-        />
+        <DashboardCards usandoSimulacao={usandoSimulacao} />
 
         <ChartsSection rows={visibleRows} usandoSimulacao={usandoSimulacao} />
 
