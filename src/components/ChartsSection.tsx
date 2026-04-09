@@ -126,7 +126,7 @@ export function ChartsSection({
           color: "#333333",
           fontSize: 13,
           fontWeight: 700,
-          formatter: "{b}\n{c}",
+          formatter: "{b}\n{d}%",
         },
         labelLine: {
           length: 14,

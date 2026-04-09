@@ -9,7 +9,7 @@ function App() {
   const [originalRows, setOriginalRows] = useState<ServiceRow[]>([]);
   const [editableRows, setEditableRows] = useState<ServiceRow[]>([]);
   const [usandoSimulacao, setUsandoSimulacao] = useState(false);
-  const [mesSelecionado, setMesSelecionado] = useState("");
+  const [mesSelecionado, setMesSelecionado] = useState("total");
   const [tipoSelecionado, setTipoSelecionado] =
     useState<TipoOperacao>("proprio");
   const [loading, setLoading] = useState(true);
@@ -20,7 +20,7 @@ function App() {
         const data = await loadBaseData();
         setOriginalRows(data);
         setEditableRows(data);
-        setMesSelecionado(data[0]?.mes ?? "");
+        setMesSelecionado("total");
       } catch (error) {
         console.error("Erro ao carregar Base.xlsx:", error);
       } finally {
@@ -36,12 +36,19 @@ function App() {
   }, [originalRows]);
 
   const visibleRows = useMemo(() => {
+    if (mesSelecionado === "total") {
+      return editableRows;
+    }
+
     return editableRows.filter((row) => row.mes === mesSelecionado);
   }, [editableRows, mesSelecionado]);
 
   const tabelaRows = useMemo(() => {
     return visibleRows.filter((row) => row.tipo === tipoSelecionado);
   }, [visibleRows, tipoSelecionado]);
+
+  const tituloPeriodo =
+    mesSelecionado === "total" ? "Todos os meses" : mesSelecionado;
 
   function handleChangeTheoretical(
     id: string,
@@ -91,7 +98,7 @@ function App() {
         <div className="page-header">
           <div>
             <h1>Dashboard Faturamento</h1>
-            <p>Dashboard de serviços e preços, original e teórico</p>
+            <p>Dashboard de serviços e preços, original e teórico — {tituloPeriodo}</p>
           </div>
 
           <div className="actions">
@@ -99,6 +106,8 @@ function App() {
               value={mesSelecionado}
               onChange={(e) => setMesSelecionado(e.target.value)}
             >
+              <option value="total">Total</option>
+
               {meses.map((mes) => (
                 <option key={mes} value={mes}>
                   {mes}
