@@ -384,9 +384,12 @@ const grafico3Data = useMemo(() => {
       .sort((a, b) => b.valor - a.valor);
   }, [rows, propriedadeSelecionada, metricaSelecionada]);
 
-  const tooltipFormatter = (value: number) => {
-    return [formatMetricValue(Number(value), metricaSelecionada), getMetricLabel(metricaSelecionada)];
-  };
+const tooltipFormatter = (value: number | string | any) => {
+  if (value === undefined || value === null) return "";
+  
+  // Retornamos apenas a string formatada do valor
+  return formatMetricValue(Number(value), metricaSelecionada);
+};
 
   if (loading) {
     return (
