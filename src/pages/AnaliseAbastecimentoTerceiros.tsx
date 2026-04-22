@@ -365,24 +365,39 @@ const grafico3Data = useMemo(() => {
     .sort((a, b) => b.valor - a.valor);
 }, [baseSemFiltroPlaca, mesGraficoFornecedor, metricaSelecionada]);
 
-  const grafico4Data = useMemo(() => {
-    if (!propriedadeSelecionada) return [];
+const grafico4Data = useMemo(() => {
+  if (!propriedadeSelecionada) return [];
 
-    const mapa = new Map<string, number>();
+  // Criamos um mapa para agrupar os itens por placa
+  const grupos = new Map<string, LinhaTratada[]>();
 
-    rows
-      .filter((item) => item.propriedade === propriedadeSelecionada)
-      .forEach((item) => {
-        mapa.set(
-          item.placa,
-          (mapa.get(item.placa) ?? 0) + getMetricValue(item, metricaSelecionada)
-        );
-      });
+  rows
+    .filter((item) => item.propriedade === propriedadeSelecionada)
+    .forEach((item) => {
+      if (!grupos.has(item.placa)) {
+        grupos.set(item.placa, []);
+      }
+      grupos.get(item.placa)!.push(item);
+    });
 
-    return Array.from(mapa.entries())
-      .map(([placa, valor]) => ({ placa, valor }))
-      .sort((a, b) => b.valor - a.valor);
-  }, [rows, propriedadeSelecionada, metricaSelecionada]);
+  return Array.from(grupos.entries())
+    .map(([placa, items]) => {
+      let valor = 0;
+
+      if (metricaSelecionada === "total") {
+        valor = items.reduce((acc, item) => acc + item.total, 0);
+      } else if (metricaSelecionada === "litros") {
+        valor = items.reduce((acc, item) => acc + item.litros, 0);
+      } else {
+        // Para R$ por Litro, tiramos a média dos valores das linhas daquela placa
+        const somaRsLitro = items.reduce((acc, item) => acc + item.rsLitro, 0);
+        valor = items.length ? somaRsLitro / items.length : 0;
+      }
+
+      return { placa, valor };
+    })
+    .sort((a, b) => b.valor - a.valor); // Mantém o ranking do maior para o menor
+}, [rows, propriedadeSelecionada, metricaSelecionada]);
 
 const tooltipFormatter = (value: number | string | any) => {
   if (value === undefined || value === null) return "";
