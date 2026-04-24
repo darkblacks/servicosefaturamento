@@ -1,4 +1,8 @@
-import type { MetricaKey } from "../../pages/AnaliseAbastecimentoTerceiros";
+import type {
+  LinhaTratada,
+  MetricaKey,
+} from "../../pages/AnaliseAbastecimentoTerceiros";
+import { exportarResumoAbastecimentoExcel } from "./excel";
 
 type Props = {
   anos: string[];
@@ -15,6 +19,8 @@ type Props = {
   setPropriedadeSelecionada: (value: string) => void;
   setPlacaSelecionada: (value: string) => void;
   setMetricaSelecionada: (value: MetricaKey) => void;
+
+  dadosExportacao: LinhaTratada[];
 };
 
 export default function FiltrosAnalise({
@@ -29,6 +35,7 @@ export default function FiltrosAnalise({
   setPropriedadeSelecionada,
   setPlacaSelecionada,
   setMetricaSelecionada,
+  dadosExportacao,
 }: Props) {
   return (
     <section className="filters-grid filters-grid--top">
@@ -106,15 +113,27 @@ export default function FiltrosAnalise({
         </label>
 
         <select
-  id="filtro-metrica"
-  className="filter-select"
-  value={metricaSelecionada}
-  onChange={(e) => setMetricaSelecionada(e.target.value as MetricaKey)}
->
-  <option value="rsLitro">R$ por Litro</option>
-  <option value="total">Reais</option>
-  <option value="litros">Litros</option>
-</select>
+          id="filtro-metrica"
+          className="filter-select"
+          value={metricaSelecionada}
+          onChange={(e) => setMetricaSelecionada(e.target.value as MetricaKey)}
+        >
+          <option value="rsLitro">R$ por Litro</option>
+          <option value="total">Reais</option>
+          <option value="litros">Litros</option>
+        </select>
+      </div>
+
+      <div className="filter-card">
+        <label className="filter-label">Exportação</label>
+
+        <button
+          type="button"
+          className="export-button"
+          onClick={() => exportarResumoAbastecimentoExcel(dadosExportacao)}
+        >
+          Exportar Excel
+        </button>
       </div>
     </section>
   );

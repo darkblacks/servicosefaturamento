@@ -557,23 +557,24 @@ const grafico1Data = useMemo(() => {
         </section>
 
         <FiltrosAnalise
-          anos={anos}
-          anoSelecionado={anoSelecionado}
-          setAnoSelecionado={(ano) => {
-            setAnoSelecionado(ano);
-            setPropriedadeSelecionada("");
-            setPlacaSelecionada("");
-            setMesGraficoFornecedor("Todos");
-          }}
-          propriedades={propriedades}
-          placas={placas}
-          propriedadeSelecionada={propriedadeSelecionada}
-          placaSelecionada={placaSelecionada}
-          metricaSelecionada={metricaSelecionada}
-          setPropriedadeSelecionada={setPropriedadeSelecionada}
-          setPlacaSelecionada={setPlacaSelecionada}
-          setMetricaSelecionada={setMetricaSelecionada}
-        />
+  anos={anos}
+  anoSelecionado={anoSelecionado}
+  setAnoSelecionado={(ano) => {
+    setAnoSelecionado(ano);
+    setPropriedadeSelecionada("");
+    setPlacaSelecionada("");
+    setMesGraficoFornecedor("Todos");
+  }}
+  propriedades={propriedades}
+  placas={placas}
+  propriedadeSelecionada={propriedadeSelecionada}
+  placaSelecionada={placaSelecionada}
+  metricaSelecionada={metricaSelecionada}
+  setPropriedadeSelecionada={setPropriedadeSelecionada}
+  setPlacaSelecionada={setPlacaSelecionada}
+  setMetricaSelecionada={setMetricaSelecionada}
+  dadosExportacao={rowsFiltradasPorAno}
+/>
 
         <section className="charts-grid">
           <GraficosPrimeiraLinha

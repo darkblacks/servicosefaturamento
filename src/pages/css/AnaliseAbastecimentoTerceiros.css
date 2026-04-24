@@ -288,3 +288,20 @@ body,
     grid-template-columns: 1fr;
   }
 }
+
+.export-button {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.export-button:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
