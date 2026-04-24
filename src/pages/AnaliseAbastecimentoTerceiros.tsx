@@ -111,11 +111,6 @@ function getMetricLabel(metrica: MetricaKey) {
   return "R$ por Litro";
 }
 
-function getMetricValue(item: LinhaTratada, metrica: MetricaKey) {
-  if (metrica === "total") return item.total;
-  if (metrica === "litros") return item.litros;
-  return item.rsLitro;
-}
 
 function formatMetricValue(value: number, metrica: MetricaKey) {
   if (metrica === "total") return formatBRL(value);
