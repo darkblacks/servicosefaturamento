@@ -1,17 +1,26 @@
 import type { MetricaKey } from "../../pages/AnaliseAbastecimentoTerceiros";
 
 type Props = {
+  anos: string[];
+  anoSelecionado: string;
+  setAnoSelecionado: (value: string) => void;
+
   propriedades: string[];
   placas: string[];
+
   propriedadeSelecionada: string;
   placaSelecionada: string;
   metricaSelecionada: MetricaKey;
+
   setPropriedadeSelecionada: (value: string) => void;
   setPlacaSelecionada: (value: string) => void;
   setMetricaSelecionada: (value: MetricaKey) => void;
 };
 
 export default function FiltrosAnalise({
+  anos,
+  anoSelecionado,
+  setAnoSelecionado,
   propriedades,
   placas,
   propriedadeSelecionada,
@@ -23,6 +32,29 @@ export default function FiltrosAnalise({
 }: Props) {
   return (
     <section className="filters-grid filters-grid--top">
+      <div className="filter-card">
+        <label className="filter-label" htmlFor="filtro-ano">
+          Ano
+        </label>
+
+        <select
+          id="filtro-ano"
+          className="filter-select"
+          value={anoSelecionado}
+          onChange={(e) => {
+            setAnoSelecionado(e.target.value);
+            setPropriedadeSelecionada("");
+            setPlacaSelecionada("");
+          }}
+        >
+          {anos.map((ano) => (
+            <option key={ano} value={ano}>
+              {ano}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="filter-card">
         <label className="filter-label" htmlFor="filtro-propriedade">
           Propriedade
@@ -74,15 +106,15 @@ export default function FiltrosAnalise({
         </label>
 
         <select
-          id="filtro-metrica"
-          className="filter-select"
-          value={metricaSelecionada}
-          onChange={(e) => setMetricaSelecionada(e.target.value as MetricaKey)}
-        >
-          <option value="total">Reais</option>
-          <option value="rsLitro">R$ por Litro</option>
-          <option value="litros">Litros</option>
-        </select>
+  id="filtro-metrica"
+  className="filter-select"
+  value={metricaSelecionada}
+  onChange={(e) => setMetricaSelecionada(e.target.value as MetricaKey)}
+>
+  <option value="rsLitro">R$ por Litro</option>
+  <option value="total">Reais</option>
+  <option value="litros">Litros</option>
+</select>
       </div>
     </section>
   );

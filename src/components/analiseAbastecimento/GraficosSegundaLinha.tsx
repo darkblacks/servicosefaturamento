@@ -13,10 +13,13 @@ type Props = {
   meses: string[];
   mesGraficoFornecedor: string;
   setMesGraficoFornecedor: (value: string) => void;
+
   grafico3Data: { nome: string; valor: number }[];
   grafico4Data: { placa: string; valor: number }[];
+
   propriedadeSelecionada: string;
   metricaLabel: string;
+
   tooltipFormatter: (value: unknown) => string;
   formatNumero: (value: number, casas?: number) => string;
 };
@@ -47,7 +50,10 @@ export default function GraficosSegundaLinha({
         </div>
 
         <div className="chart-local-filter">
-          <label className="filter-label filter-label--small" htmlFor="filtro-mes-grafico">
+          <label
+            className="filter-label filter-label--small"
+            htmlFor="filtro-mes-grafico"
+          >
             Mês local
           </label>
 

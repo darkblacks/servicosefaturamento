@@ -45,9 +45,7 @@ function toNumber(value: unknown) {
     return Number.isFinite(value) ? value : 0;
   }
 
-  if (value == null || value === "") {
-    return 0;
-  }
+  if (value == null || value === "") return 0;
 
   const text = String(value)
     .trim()
@@ -61,10 +59,21 @@ function toNumber(value: unknown) {
 }
 
 function normalizarMes(valor: unknown) {
-  const texto = String(valor ?? "").trim();
-  if (!texto) return "";
-  if (/^\d{4}-\d{2}$/.test(texto)) return texto;
+  if (!valor) return "";
+
+  const texto = String(valor).trim();
+  const match = texto.match(/^(\d{4})-(\d{2})/);
+
+  if (match) {
+    return `${match[1]}-${match[2]}`;
+  }
+
   return texto;
+}
+
+function getAnoFromMes(mes: string) {
+  const match = String(mes).trim().match(/^(\d{4})-\d{2}$/);
+  return match ? match[1] : "";
 }
 
 function pick(row: LinhaOriginal, aliases: string[]) {
@@ -119,10 +128,11 @@ export default function AnaliseAbastecimentoTerceiros() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
 
+  const [anoSelecionado, setAnoSelecionado] = useState("2026");
   const [propriedadeSelecionada, setPropriedadeSelecionada] = useState("");
   const [placaSelecionada, setPlacaSelecionada] = useState("");
   const [metricaSelecionada, setMetricaSelecionada] =
-    useState<MetricaKey>("total");
+  useState<MetricaKey>("rsLitro");
 
   const [mesGraficoFornecedor, setMesGraficoFornecedor] = useState("Todos");
 
@@ -181,6 +191,7 @@ export default function AnaliseAbastecimentoTerceiros() {
             ).trim();
 
             const litros = toNumber(pick(item, ["Litros", " Litros "]));
+
             const total = toNumber(
               pick(item, ["R$TOTAL", " R$TOTAL ", "Total"])
             );
@@ -231,24 +242,41 @@ export default function AnaliseAbastecimentoTerceiros() {
     carregarArquivo();
   }, []);
 
-  const meses = useMemo(() => {
-    return [...new Set(rows.map((item) => item.mes))].sort();
+  const anos = useMemo(() => {
+    return [...new Set(rows.map((item) => getAnoFromMes(item.mes)))]
+      .filter(Boolean)
+      .sort();
   }, [rows]);
 
+  const rowsFiltradasPorAno = useMemo(() => {
+    return rows.filter((item) => {
+      if (!anoSelecionado) return true;
+      return getAnoFromMes(item.mes) === anoSelecionado;
+    });
+  }, [rows, anoSelecionado]);
+
+  const meses = useMemo(() => {
+    return [...new Set(rowsFiltradasPorAno.map((item) => item.mes))].sort();
+  }, [rowsFiltradasPorAno]);
+
   const propriedades = useMemo(() => {
-    return [...new Set(rows.map((item) => item.propriedade))].sort();
-  }, [rows]);
+    return [
+      ...new Set(rowsFiltradasPorAno.map((item) => item.propriedade)),
+    ].sort();
+  }, [rowsFiltradasPorAno]);
 
   const placas = useMemo(() => {
     const base = propriedadeSelecionada
-      ? rows.filter((item) => item.propriedade === propriedadeSelecionada)
-      : rows;
+      ? rowsFiltradasPorAno.filter(
+          (item) => item.propriedade === propriedadeSelecionada
+        )
+      : rowsFiltradasPorAno;
 
     return [...new Set(base.map((item) => item.placa))].sort();
-  }, [rows, propriedadeSelecionada]);
+  }, [rowsFiltradasPorAno, propriedadeSelecionada]);
 
   const baseSemFiltroPlaca = useMemo(() => {
-    return rows.filter((item) => {
+    return rowsFiltradasPorAno.filter((item) => {
       if (
         propriedadeSelecionada &&
         item.propriedade !== propriedadeSelecionada
@@ -258,10 +286,10 @@ export default function AnaliseAbastecimentoTerceiros() {
 
       return true;
     });
-  }, [rows, propriedadeSelecionada]);
+  }, [rowsFiltradasPorAno, propriedadeSelecionada]);
 
   const baseComFiltrosPrincipais = useMemo(() => {
-    return rows.filter((item) => {
+    return rowsFiltradasPorAno.filter((item) => {
       if (
         propriedadeSelecionada &&
         item.propriedade !== propriedadeSelecionada
@@ -275,7 +303,7 @@ export default function AnaliseAbastecimentoTerceiros() {
 
       return true;
     });
-  }, [rows, propriedadeSelecionada, placaSelecionada]);
+  }, [rowsFiltradasPorAno, propriedadeSelecionada, placaSelecionada]);
 
   const kpis = useMemo(() => {
     const totalReais = baseComFiltrosPrincipais.reduce(
@@ -301,35 +329,56 @@ export default function AnaliseAbastecimentoTerceiros() {
     };
   }, [baseComFiltrosPrincipais]);
 
-  const grafico1Data = useMemo(() => {
-    const grupos = new Map<string, LinhaTratada[]>();
+const grafico1Data = useMemo(() => {
+  const grupos = new Map<string, LinhaTratada[]>();
 
-    baseSemFiltroPlaca.forEach((item) => {
-      if (!grupos.has(item.mes)) {
-        grupos.set(item.mes, []);
+  baseSemFiltroPlaca.forEach((item) => {
+    if (!grupos.has(item.mes)) {
+      grupos.set(item.mes, []);
+    }
+
+    grupos.get(item.mes)!.push(item);
+  });
+
+  const dados = Array.from(grupos.entries())
+    .map(([mes, items]) => {
+      const totalReais = items.reduce((acc, item) => acc + item.total, 0);
+      const totalLitros = items.reduce((acc, item) => acc + item.litros, 0);
+
+      let valor = 0;
+
+      if (metricaSelecionada === "total") {
+        valor = totalReais;
+      } else if (metricaSelecionada === "litros") {
+        valor = totalLitros;
+      } else {
+        valor = totalLitros ? totalReais / totalLitros : 0;
       }
 
-      grupos.get(item.mes)!.push(item);
-    });
+      return {
+        mes,
+        valor,
+        totalLitros,
+        diferencaMesAnterior: 0,
+        totalDiferenca: 0,
+      };
+    })
+    .sort((a, b) => a.mes.localeCompare(b.mes));
 
-    return Array.from(grupos.entries())
-      .map(([mes, items]) => {
-        let valor = 0;
+  return dados.map((item, index) => {
+    const anterior = dados[index - 1];
+    const diferencaMesAnterior = anterior ? item.valor - anterior.valor : 0;
 
-        if (metricaSelecionada === "total") {
-          valor = items.reduce((acc, item) => acc + item.total, 0);
-        } else if (metricaSelecionada === "litros") {
-          valor = items.reduce((acc, item) => acc + item.litros, 0);
-        } else {
-          const totalReais = items.reduce((acc, item) => acc + item.total, 0);
-          const totalLitros = items.reduce((acc, item) => acc + item.litros, 0);
-          valor = totalLitros ? totalReais / totalLitros : 0;
-        }
-
-        return { mes, valor };
-      })
-      .sort((a, b) => a.mes.localeCompare(b.mes));
-  }, [baseSemFiltroPlaca, metricaSelecionada]);
+    return {
+      ...item,
+      diferencaMesAnterior,
+      totalDiferenca:
+        metricaSelecionada === "rsLitro"
+          ? diferencaMesAnterior * item.totalLitros
+          : diferencaMesAnterior,
+    };
+  });
+}, [baseSemFiltroPlaca, metricaSelecionada]);
 
   const grafico2Data = useMemo(() => {
     if (!placaSelecionada) return [];
@@ -390,8 +439,10 @@ export default function AnaliseAbastecimentoTerceiros() {
 
     const baseMes =
       mesGraficoFornecedor === "Todos"
-        ? rows
-        : rows.filter((item) => item.mes === mesGraficoFornecedor);
+        ? rowsFiltradasPorAno
+        : rowsFiltradasPorAno.filter(
+            (item) => item.mes === mesGraficoFornecedor
+          );
 
     const grupos = new Map<string, LinhaTratada[]>();
 
@@ -422,13 +473,17 @@ export default function AnaliseAbastecimentoTerceiros() {
         return { placa, valor };
       })
       .sort((a, b) => b.valor - a.valor);
-  }, [rows, propriedadeSelecionada, mesGraficoFornecedor, metricaSelecionada]);
+  }, [
+    rowsFiltradasPorAno,
+    propriedadeSelecionada,
+    mesGraficoFornecedor,
+    metricaSelecionada,
+  ]);
 
   const tooltipFormatter = (value: unknown) => {
-  if (value === undefined || value === null) return "";
-
-  return formatMetricValue(Number(value), metricaSelecionada);
-};
+    if (value === undefined || value === null) return "";
+    return formatMetricValue(Number(value), metricaSelecionada);
+  };
 
   const metricaLabel = getMetricLabel(metricaSelecionada);
 
@@ -502,6 +557,14 @@ export default function AnaliseAbastecimentoTerceiros() {
         </section>
 
         <FiltrosAnalise
+          anos={anos}
+          anoSelecionado={anoSelecionado}
+          setAnoSelecionado={(ano) => {
+            setAnoSelecionado(ano);
+            setPropriedadeSelecionada("");
+            setPlacaSelecionada("");
+            setMesGraficoFornecedor("Todos");
+          }}
           propriedades={propriedades}
           placas={placas}
           propriedadeSelecionada={propriedadeSelecionada}
