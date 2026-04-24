@@ -9,15 +9,17 @@ import {
   YAxis,
 } from "recharts";
 
-type Props = {
-  grafico1Data: {
+type GraficoEvolucaoData = {
   mes: string;
   valor: number;
   totalLitros: number;
   diferencaMesAnterior: number;
   totalDiferenca: number;
-}[];
-  grafico2Data: { mes: string; valor: number }[];
+};
+
+type Props = {
+  grafico1Data: GraficoEvolucaoData[];
+  grafico2Data: GraficoEvolucaoData[];
   placaSelecionada: string;
   metricaLabel: string;
   tooltipFormatter: (value: unknown) => string;
@@ -93,44 +95,26 @@ export default function GraficosPrimeiraLinha({
         <div className="chart-area">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={grafico1Data}>
-  <CartesianGrid strokeDasharray="3 3" />
-  <XAxis dataKey="mes" />
-  <YAxis tickFormatter={(value) => formatNumero(Number(value), 0)} />
-  <Tooltip
-  content={
-    <TooltipGraficoGeral tooltipFormatter={tooltipFormatter} />
-  }
-  formatter={(value, name, item) => {
-    const payload = item.payload as {
-      diferencaMesAnterior?: number;
-      totalDiferenca?: number;
-    };
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" />
+              <YAxis tickFormatter={(value) => formatNumero(Number(value), 0)} />
 
-    const diferenca = payload.diferencaMesAnterior ?? 0;
-    const totalDiferenca = payload.totalDiferenca ?? 0;
+              <Tooltip
+                content={
+                  <TooltipGraficoGeral tooltipFormatter={tooltipFormatter} />
+                }
+              />
 
-    return [
-      `${tooltipFormatter(value)} | Dif. mês anterior: ${tooltipFormatter(
-        diferenca
-      )} | Total da diferença: ${new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(totalDiferenca)}`,
-      name,
-    ];
-  }}
-/>
-  <Legend />
+              <Legend />
 
-  <Line
-    type="monotone"
-    dataKey="valor"
-    name={metricaLabel}
-    strokeWidth={3}
-    dot
-  />
-
-</LineChart>
+              <Line
+                type="monotone"
+                dataKey="valor"
+                name={metricaLabel}
+                strokeWidth={3}
+                dot
+              />
+            </LineChart>
           </ResponsiveContainer>
         </div>
       </article>
@@ -138,7 +122,9 @@ export default function GraficosPrimeiraLinha({
       <article className="chart-card">
         <div className="chart-header">
           <h2 className="chart-title">Placa selecionada</h2>
-          <p className="chart-subtitle">Métrica: {metricaLabel}</p>
+          <p className="chart-subtitle">
+            Evolução da placa · Métrica: {metricaLabel}
+          </p>
         </div>
 
         <div className="chart-area">
@@ -150,8 +136,15 @@ export default function GraficosPrimeiraLinha({
                 <YAxis
                   tickFormatter={(value) => formatNumero(Number(value), 0)}
                 />
-                <Tooltip formatter={tooltipFormatter} />
+
+                <Tooltip
+                  content={
+                    <TooltipGraficoGeral tooltipFormatter={tooltipFormatter} />
+                  }
+                />
+
                 <Legend />
+
                 <Line
                   type="monotone"
                   dataKey="valor"

@@ -380,22 +380,58 @@ const grafico1Data = useMemo(() => {
   });
 }, [baseSemFiltroPlaca, metricaSelecionada]);
 
-  const grafico2Data = useMemo(() => {
-    if (!placaSelecionada) return [];
+const grafico2Data = useMemo(() => {
+  if (!placaSelecionada) return [];
 
-    const mapa = new Map<string, number>();
+  const grupos = new Map<string, LinhaTratada[]>();
 
-    baseComFiltrosPrincipais.forEach((item) => {
-      mapa.set(
-        item.mes,
-        (mapa.get(item.mes) ?? 0) + getMetricValue(item, metricaSelecionada)
-      );
-    });
+  baseComFiltrosPrincipais.forEach((item) => {
+    if (!grupos.has(item.mes)) {
+      grupos.set(item.mes, []);
+    }
 
-    return Array.from(mapa.entries())
-      .map(([mes, valor]) => ({ mes, valor }))
-      .sort((a, b) => a.mes.localeCompare(b.mes));
-  }, [baseComFiltrosPrincipais, placaSelecionada, metricaSelecionada]);
+    grupos.get(item.mes)!.push(item);
+  });
+
+  const dados = Array.from(grupos.entries())
+    .map(([mes, items]) => {
+      const totalReais = items.reduce((acc, item) => acc + item.total, 0);
+      const totalLitros = items.reduce((acc, item) => acc + item.litros, 0);
+
+      let valor = 0;
+
+      if (metricaSelecionada === "total") {
+        valor = totalReais;
+      } else if (metricaSelecionada === "litros") {
+        valor = totalLitros;
+      } else {
+        valor = totalLitros ? totalReais / totalLitros : 0;
+      }
+
+      return {
+        mes,
+        valor,
+        totalLitros,
+        diferencaMesAnterior: 0,
+        totalDiferenca: 0,
+      };
+    })
+    .sort((a, b) => a.mes.localeCompare(b.mes));
+
+  return dados.map((item, index) => {
+    const anterior = dados[index - 1];
+    const diferencaMesAnterior = anterior ? item.valor - anterior.valor : 0;
+
+    return {
+      ...item,
+      diferencaMesAnterior,
+      totalDiferenca:
+        metricaSelecionada === "rsLitro"
+          ? diferencaMesAnterior * item.totalLitros
+          : diferencaMesAnterior,
+    };
+  });
+}, [baseComFiltrosPrincipais, placaSelecionada, metricaSelecionada]);
 
   const grafico3Data = useMemo(() => {
     const baseMes =
