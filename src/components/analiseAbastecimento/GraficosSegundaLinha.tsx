@@ -18,6 +18,9 @@ type Props = {
   grafico4Data: { placa: string; valor: number }[];
 
   propriedadeSelecionada: string;
+  setPropriedadeSelecionada: (value: string) => void;
+  setPlacaSelecionada: (value: string) => void;
+
   metricaLabel: string;
 
   tooltipFormatter: (value: unknown) => string;
@@ -35,6 +38,8 @@ export default function GraficosSegundaLinha({
   grafico3Data,
   grafico4Data,
   propriedadeSelecionada,
+  setPropriedadeSelecionada,
+  setPlacaSelecionada,
   metricaLabel,
   tooltipFormatter,
   formatNumero,
@@ -78,12 +83,22 @@ export default function GraficosSegundaLinha({
         <article className="chart-card chart-card--inner">
           <div className="chart-header">
             <h2 className="chart-title">Comparação de fornecedores</h2>
-            <p className="chart-subtitle">Métrica: {metricaLabel}</p>
+            <p className="chart-subtitle">Clique em um fornecedor para filtrar</p>
           </div>
 
           <div className="chart-area">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={grafico3Data}>
+              <BarChart
+                data={grafico3Data}
+                onClick={(event) => {
+                  const fornecedor = event?.activePayload?.[0]?.payload?.nome;
+
+                  if (fornecedor) {
+                    setPropriedadeSelecionada(fornecedor);
+                    setPlacaSelecionada("");
+                  }
+                }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="nome" />
                 <YAxis
@@ -95,6 +110,7 @@ export default function GraficosSegundaLinha({
                   dataKey="valor"
                   name={metricaLabel}
                   radius={[8, 8, 0, 0]}
+                  cursor="pointer"
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -106,13 +122,22 @@ export default function GraficosSegundaLinha({
             <h2 className="chart-title">
               Comparação das placas da Propriedade selecionada
             </h2>
-            <p className="chart-subtitle">Métrica: {metricaLabel}</p>
+            <p className="chart-subtitle">Clique em uma placa para filtrar</p>
           </div>
 
           <div className="chart-area">
             {propriedadeSelecionada ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={grafico4Data}>
+                <BarChart
+                  data={grafico4Data}
+                  onClick={(event) => {
+                    const placa = event?.activePayload?.[0]?.payload?.placa;
+
+                    if (placa) {
+                      setPlacaSelecionada(placa);
+                    }
+                  }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="placa" />
                   <YAxis
@@ -124,6 +149,7 @@ export default function GraficosSegundaLinha({
                     dataKey="valor"
                     name={propriedadeSelecionada}
                     radius={[8, 8, 0, 0]}
+                    cursor="pointer"
                   />
                 </BarChart>
               </ResponsiveContainer>
