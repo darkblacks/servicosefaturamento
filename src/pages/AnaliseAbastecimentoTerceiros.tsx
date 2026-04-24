@@ -1,22 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import FiltrosAnalise from "../components/analiseAbastecimento/FiltrosAnalise";
+import GraficosPrimeiraLinha from "../components/analiseAbastecimento/GraficosPrimeiraLinha";
+import GraficosSegundaLinha from "../components/analiseAbastecimento/GraficosSegundaLinha";
 import "./css/AnaliseAbastecimentoTerceiros.css";
 
 type LinhaOriginal = Record<string, unknown>;
 
-type LinhaTratada = {
+export type LinhaTratada = {
   mes: string;
   placa: string;
   propriedadeLinha: string;
@@ -27,7 +18,7 @@ type LinhaTratada = {
   rsLitro: number;
 };
 
-type MetricaKey = "total" | "litros" | "rsLitro";
+export type MetricaKey = "total" | "litros" | "rsLitro";
 
 const NOME_ARQUIVO = encodeURI("/04 - ABRIL.xlsx");
 
@@ -84,6 +75,7 @@ function pick(row: LinhaOriginal, aliases: string[]) {
     const found = entries.find(
       ([key]) => normalizarCabecalho(key) === aliasNormalizado
     );
+
     if (found) return found[1];
   }
 
@@ -122,14 +114,6 @@ function formatMetricValue(value: number, metrica: MetricaKey) {
   return formatNumero(value, 2);
 }
 
-function EmptyChart({
-  message,
-}: {
-  message: string;
-}) {
-  return <div className="empty-chart">{message}</div>;
-}
-
 export default function AnaliseAbastecimentoTerceiros() {
   const [rows, setRows] = useState<LinhaTratada[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,6 +139,7 @@ export default function AnaliseAbastecimentoTerceiros() {
         }
 
         const contentType = response.headers.get("content-type") || "";
+
         if (
           contentType.includes("text/html") ||
           contentType.includes("application/json")
@@ -172,7 +157,9 @@ export default function AnaliseAbastecimentoTerceiros() {
         );
 
         if (!nomeAba) {
-          throw new Error("A aba 'ABASTECIMENTO CONSOLIDADO' não foi encontrada.");
+          throw new Error(
+            "A aba 'ABASTECIMENTO CONSOLIDADO' não foi encontrada."
+          );
         }
 
         const sheet = workbook.Sheets[nomeAba];
@@ -184,18 +171,24 @@ export default function AnaliseAbastecimentoTerceiros() {
           .map((item) => {
             const mes = normalizarMes(pick(item, ["Mês", "MES", "mes"]));
             const placa = String(pick(item, ["Placa", "PLACA"])).trim();
+
             const propriedadeLinha = String(
               pick(item, ["PROPRIEDADE", "Propriedade"])
             ).trim();
+
             const propriedade = String(
               pick(item, ["proprio", "Proprio", "Fornecedor", "fornecedor"])
             ).trim();
 
             const litros = toNumber(pick(item, ["Litros", " Litros "]));
-            const total = toNumber(pick(item, ["R$TOTAL", " R$TOTAL ", "Total"]));
+            const total = toNumber(
+              pick(item, ["R$TOTAL", " R$TOTAL ", "Total"])
+            );
+
             const viagens = toNumber(
               pick(item, ["Total de Viagens", "TotalViagens"])
             );
+
             const rsLitro = toNumber(pick(item, ["R$/Litros", "R$/Litro"]));
 
             return {
@@ -210,7 +203,10 @@ export default function AnaliseAbastecimentoTerceiros() {
             };
           })
           .filter((item) => {
-            const propriedadeLinhaNormalizada = normalizarTexto(item.propriedadeLinha);
+            const propriedadeLinhaNormalizada = normalizarTexto(
+              item.propriedadeLinha
+            );
+
             const propriedadeNormalizada = normalizarTexto(item.propriedade);
 
             return (
@@ -253,29 +249,49 @@ export default function AnaliseAbastecimentoTerceiros() {
 
   const baseSemFiltroPlaca = useMemo(() => {
     return rows.filter((item) => {
-      if (propriedadeSelecionada && item.propriedade !== propriedadeSelecionada) {
+      if (
+        propriedadeSelecionada &&
+        item.propriedade !== propriedadeSelecionada
+      ) {
         return false;
       }
+
       return true;
     });
   }, [rows, propriedadeSelecionada]);
 
   const baseComFiltrosPrincipais = useMemo(() => {
     return rows.filter((item) => {
-      if (propriedadeSelecionada && item.propriedade !== propriedadeSelecionada) {
+      if (
+        propriedadeSelecionada &&
+        item.propriedade !== propriedadeSelecionada
+      ) {
         return false;
       }
+
       if (placaSelecionada && item.placa !== placaSelecionada) {
         return false;
       }
+
       return true;
     });
   }, [rows, propriedadeSelecionada, placaSelecionada]);
 
   const kpis = useMemo(() => {
-    const totalReais = baseComFiltrosPrincipais.reduce((acc, item) => acc + item.total, 0);
-    const totalLitros = baseComFiltrosPrincipais.reduce((acc, item) => acc + item.litros, 0);
-    const totalViagens = baseComFiltrosPrincipais.reduce((acc, item) => acc + item.viagens, 0);
+    const totalReais = baseComFiltrosPrincipais.reduce(
+      (acc, item) => acc + item.total,
+      0
+    );
+
+    const totalLitros = baseComFiltrosPrincipais.reduce(
+      (acc, item) => acc + item.litros,
+      0
+    );
+
+    const totalViagens = baseComFiltrosPrincipais.reduce(
+      (acc, item) => acc + item.viagens,
+      0
+    );
 
     return {
       totalReais,
@@ -285,34 +301,35 @@ export default function AnaliseAbastecimentoTerceiros() {
     };
   }, [baseComFiltrosPrincipais]);
 
-const grafico1Data = useMemo(() => {
-  const grupos = new Map<string, LinhaTratada[]>();
+  const grafico1Data = useMemo(() => {
+    const grupos = new Map<string, LinhaTratada[]>();
 
-  baseSemFiltroPlaca.forEach((item) => {
-    if (!grupos.has(item.mes)) {
-      grupos.set(item.mes, []);
-    }
-
-    grupos.get(item.mes)!.push(item);
-  });
-
-  return Array.from(grupos.entries())
-    .map(([mes, items]) => {
-      let valor = 0;
-
-      if (metricaSelecionada === "total") {
-        valor = items.reduce((acc, item) => acc + item.total, 0);
-      } else if (metricaSelecionada === "litros") {
-        valor = items.reduce((acc, item) => acc + item.litros, 0);
-      } else {
-        const somaRsLitro = items.reduce((acc, item) => acc + item.rsLitro, 0);
-        valor = items.length ? somaRsLitro / items.length : 0;
+    baseSemFiltroPlaca.forEach((item) => {
+      if (!grupos.has(item.mes)) {
+        grupos.set(item.mes, []);
       }
 
-      return { mes, valor };
-    })
-    .sort((a, b) => a.mes.localeCompare(b.mes));
-}, [baseSemFiltroPlaca, metricaSelecionada]);
+      grupos.get(item.mes)!.push(item);
+    });
+
+    return Array.from(grupos.entries())
+      .map(([mes, items]) => {
+        let valor = 0;
+
+        if (metricaSelecionada === "total") {
+          valor = items.reduce((acc, item) => acc + item.total, 0);
+        } else if (metricaSelecionada === "litros") {
+          valor = items.reduce((acc, item) => acc + item.litros, 0);
+        } else {
+          const totalReais = items.reduce((acc, item) => acc + item.total, 0);
+          const totalLitros = items.reduce((acc, item) => acc + item.litros, 0);
+          valor = totalLitros ? totalReais / totalLitros : 0;
+        }
+
+        return { mes, valor };
+      })
+      .sort((a, b) => a.mes.localeCompare(b.mes));
+  }, [baseSemFiltroPlaca, metricaSelecionada]);
 
   const grafico2Data = useMemo(() => {
     if (!placaSelecionada) return [];
@@ -331,80 +348,89 @@ const grafico1Data = useMemo(() => {
       .sort((a, b) => a.mes.localeCompare(b.mes));
   }, [baseComFiltrosPrincipais, placaSelecionada, metricaSelecionada]);
 
-const grafico3Data = useMemo(() => {
-  const baseMes =
-    mesGraficoFornecedor === "Todos"
-      ? baseSemFiltroPlaca
-      : baseSemFiltroPlaca.filter((item) => item.mes >= mesGraficoFornecedor);
+  const grafico3Data = useMemo(() => {
+    const baseMes =
+      mesGraficoFornecedor === "Todos"
+        ? baseSemFiltroPlaca
+        : baseSemFiltroPlaca.filter(
+            (item) => item.mes === mesGraficoFornecedor
+          );
 
-  const grupos = new Map<string, LinhaTratada[]>();
+    const grupos = new Map<string, LinhaTratada[]>();
 
-  baseMes.forEach((item) => {
-    if (!grupos.has(item.propriedade)) {
-      grupos.set(item.propriedade, []);
-    }
-
-    grupos.get(item.propriedade)!.push(item);
-  });
-
-  return Array.from(grupos.entries())
-    .map(([nome, items]) => {
-      let valor = 0;
-
-      if (metricaSelecionada === "total") {
-        valor = items.reduce((acc, item) => acc + item.total, 0);
-      } else if (metricaSelecionada === "litros") {
-        valor = items.reduce((acc, item) => acc + item.litros, 0);
-      } else {
-        const somaRsLitro = items.reduce((acc, item) => acc + item.rsLitro, 0);
-        valor = items.length ? somaRsLitro / items.length : 0;
+    baseMes.forEach((item) => {
+      if (!grupos.has(item.propriedade)) {
+        grupos.set(item.propriedade, []);
       }
 
-      return { nome, valor };
-    })
-    .sort((a, b) => b.valor - a.valor);
-}, [baseSemFiltroPlaca, mesGraficoFornecedor, metricaSelecionada]);
-
-const grafico4Data = useMemo(() => {
-  if (!propriedadeSelecionada) return [];
-
-  // Criamos um mapa para agrupar os itens por placa
-  const grupos = new Map<string, LinhaTratada[]>();
-
-  rows
-    .filter((item) => item.propriedade === propriedadeSelecionada)
-    .forEach((item) => {
-      if (!grupos.has(item.placa)) {
-        grupos.set(item.placa, []);
-      }
-      grupos.get(item.placa)!.push(item);
+      grupos.get(item.propriedade)!.push(item);
     });
 
-  return Array.from(grupos.entries())
-    .map(([placa, items]) => {
-      let valor = 0;
+    return Array.from(grupos.entries())
+      .map(([nome, items]) => {
+        let valor = 0;
 
-      if (metricaSelecionada === "total") {
-        valor = items.reduce((acc, item) => acc + item.total, 0);
-      } else if (metricaSelecionada === "litros") {
-        valor = items.reduce((acc, item) => acc + item.litros, 0);
-      } else {
-        // Para R$ por Litro, tiramos a média dos valores das linhas daquela placa
-        const somaRsLitro = items.reduce((acc, item) => acc + item.rsLitro, 0);
-        valor = items.length ? somaRsLitro / items.length : 0;
-      }
+        if (metricaSelecionada === "total") {
+          valor = items.reduce((acc, item) => acc + item.total, 0);
+        } else if (metricaSelecionada === "litros") {
+          valor = items.reduce((acc, item) => acc + item.litros, 0);
+        } else {
+          const totalReais = items.reduce((acc, item) => acc + item.total, 0);
+          const totalLitros = items.reduce((acc, item) => acc + item.litros, 0);
+          valor = totalLitros ? totalReais / totalLitros : 0;
+        }
 
-      return { placa, valor };
-    })
-    .sort((a, b) => b.valor - a.valor); // Mantém o ranking do maior para o menor
-}, [rows, propriedadeSelecionada, metricaSelecionada]);
+        return { nome, valor };
+      })
+      .sort((a, b) => b.valor - a.valor);
+  }, [baseSemFiltroPlaca, mesGraficoFornecedor, metricaSelecionada]);
 
-const tooltipFormatter = (value: number | string | any) => {
+  const grafico4Data = useMemo(() => {
+    if (!propriedadeSelecionada) return [];
+
+    const baseMes =
+      mesGraficoFornecedor === "Todos"
+        ? rows
+        : rows.filter((item) => item.mes === mesGraficoFornecedor);
+
+    const grupos = new Map<string, LinhaTratada[]>();
+
+    baseMes
+      .filter((item) => item.propriedade === propriedadeSelecionada)
+      .forEach((item) => {
+        if (!grupos.has(item.placa)) {
+          grupos.set(item.placa, []);
+        }
+
+        grupos.get(item.placa)!.push(item);
+      });
+
+    return Array.from(grupos.entries())
+      .map(([placa, items]) => {
+        let valor = 0;
+
+        if (metricaSelecionada === "total") {
+          valor = items.reduce((acc, item) => acc + item.total, 0);
+        } else if (metricaSelecionada === "litros") {
+          valor = items.reduce((acc, item) => acc + item.litros, 0);
+        } else {
+          const totalReais = items.reduce((acc, item) => acc + item.total, 0);
+          const totalLitros = items.reduce((acc, item) => acc + item.litros, 0);
+          valor = totalLitros ? totalReais / totalLitros : 0;
+        }
+
+        return { placa, valor };
+      })
+      .sort((a, b) => b.valor - a.valor);
+  }, [rows, propriedadeSelecionada, mesGraficoFornecedor, metricaSelecionada]);
+
+  const tooltipFormatter = (value: unknown) => {
   if (value === undefined || value === null) return "";
-  
-  // Retornamos apenas a string formatada do valor
+
   return formatMetricValue(Number(value), metricaSelecionada);
 };
+
+  const metricaLabel = getMetricLabel(metricaSelecionada);
 
   if (loading) {
     return (
@@ -424,7 +450,8 @@ const tooltipFormatter = (value: number | string | any) => {
             <h1 className="analise-title">Erro ao carregar análise</h1>
             <p className="analise-error-text">{erro}</p>
             <p className="analise-helper">
-              Verifique se o arquivo está em <strong>public/04 - ABRIL.xlsx</strong>.
+              Verifique se o arquivo está em{" "}
+              <strong>public/04 - ABRIL.xlsx</strong>.
             </p>
           </div>
         </div>
@@ -437,9 +464,11 @@ const tooltipFormatter = (value: number | string | any) => {
       <div className="analise-container">
         <header className="analise-header">
           <div>
-            <h1 className="analise-title">Análise de Abastecimento - Terceiros</h1>
+            <h1 className="analise-title">
+              Análise de Abastecimento - Terceiros
+            </h1>
             <p className="analise-subtitle">
-              Dashboard com 3 filtros principais e 4 gráficos analíticos.
+              Dashboard com filtros principais e gráficos analíticos.
             </p>
           </div>
         </header>
@@ -452,218 +481,58 @@ const tooltipFormatter = (value: number | string | any) => {
 
           <article className="kpi-card">
             <span className="kpi-label">Litros</span>
-            <strong className="kpi-value">{formatNumero(kpis.totalLitros, 0)}</strong>
+            <strong className="kpi-value">
+              {formatNumero(kpis.totalLitros, 0)}
+            </strong>
           </article>
 
           <article className="kpi-card">
             <span className="kpi-label">Viagens</span>
-            <strong className="kpi-value">{formatNumero(kpis.totalViagens, 0)}</strong>
+            <strong className="kpi-value">
+              {formatNumero(kpis.totalViagens, 0)}
+            </strong>
           </article>
 
           <article className="kpi-card">
             <span className="kpi-label">R$ por Litro médio</span>
-            <strong className="kpi-value">{formatNumero(kpis.rsLitroMedio, 2)}</strong>
+            <strong className="kpi-value">
+              {formatNumero(kpis.rsLitroMedio, 2)}
+            </strong>
           </article>
         </section>
 
-        <section className="filters-grid filters-grid--top">
-          <div className="filter-card">
-            <label className="filter-label" htmlFor="filtro-propriedade">
-              Propriedade
-            </label>
-            <select
-              id="filtro-propriedade"
-              className="filter-select"
-              value={propriedadeSelecionada}
-              onChange={(e) => {
-                setPropriedadeSelecionada(e.target.value);
-                setPlacaSelecionada("");
-              }}
-            >
-              <option value="">Selecione uma Propriedade</option>
-              {propriedades.map((propriedade) => (
-                <option key={propriedade} value={propriedade}>
-                  {propriedade}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-card">
-            <label className="filter-label" htmlFor="filtro-placa">
-              Placa
-            </label>
-            <select
-              id="filtro-placa"
-              className="filter-select"
-              value={placaSelecionada}
-              onChange={(e) => setPlacaSelecionada(e.target.value)}
-            >
-              <option value="">Selecione uma Placa</option>
-              {placas.map((placa) => (
-                <option key={placa} value={placa}>
-                  {placa}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-card">
-            <label className="filter-label" htmlFor="filtro-metrica">
-              Valor que governa os gráficos
-            </label>
-            <select
-              id="filtro-metrica"
-              className="filter-select"
-              value={metricaSelecionada}
-              onChange={(e) => setMetricaSelecionada(e.target.value as MetricaKey)}
-            >
-              <option value="total">Reais</option>
-              <option value="rsLitro">R$ por Litro</option>
-              <option value="litros">Litros</option>
-            </select>
-          </div>
-        </section>
+        <FiltrosAnalise
+          propriedades={propriedades}
+          placas={placas}
+          propriedadeSelecionada={propriedadeSelecionada}
+          placaSelecionada={placaSelecionada}
+          metricaSelecionada={metricaSelecionada}
+          setPropriedadeSelecionada={setPropriedadeSelecionada}
+          setPlacaSelecionada={setPlacaSelecionada}
+          setMetricaSelecionada={setMetricaSelecionada}
+        />
 
         <section className="charts-grid">
-          <article className="chart-card">
-            <div className="chart-header">
-              <h2 className="chart-title">
-                Evolução mensal geral (não influenciado pela placa selecionada)
-              </h2>
-              <p className="chart-subtitle">
-                Eixo X = meses · Métrica: {getMetricLabel(metricaSelecionada)}
-              </p>
-            </div>
+          <GraficosPrimeiraLinha
+            grafico1Data={grafico1Data}
+            grafico2Data={grafico2Data}
+            placaSelecionada={placaSelecionada}
+            metricaLabel={metricaLabel}
+            tooltipFormatter={tooltipFormatter}
+            formatNumero={formatNumero}
+          />
 
-            <div className="chart-area">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={grafico1Data}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="mes" />
-                  <YAxis tickFormatter={(value) => formatNumero(Number(value), 0)} />
-                  <Tooltip formatter={tooltipFormatter} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="valor"
-                    name={getMetricLabel(metricaSelecionada)}
-                    strokeWidth={3}
-                    dot={true}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </article>
-
-          <article className="chart-card">
-            <div className="chart-header">
-              <h2 className="chart-title">Placa selecionada</h2>
-              <p className="chart-subtitle">
-                Eixo X = meses · Métrica: {getMetricLabel(metricaSelecionada)}
-              </p>
-            </div>
-
-            <div className="chart-area">
-              {placaSelecionada ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={grafico2Data}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" />
-                    <YAxis tickFormatter={(value) => formatNumero(Number(value), 0)} />
-                    <Tooltip formatter={tooltipFormatter} />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="valor"
-                      name={placaSelecionada}
-                      strokeWidth={3}
-                      dot={true}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <EmptyChart message="Nenhuma Placa selecionada" />
-              )}
-            </div>
-          </article>
-
-          <article className="chart-card">
-            <div className="chart-header chart-header--split">
-              <div>
-                <h2 className="chart-title">Comparação de fornecedores</h2>
-                <p className="chart-subtitle">
-                  Barras por fornecedor · Métrica: {getMetricLabel(metricaSelecionada)}
-                </p>
-              </div>
-
-              <div className="chart-local-filter">
-                <label className="filter-label filter-label--small" htmlFor="filtro-mes-grafico">
-                  Mês local
-                </label>
-                <select
-                  id="filtro-mes-grafico"
-                  className="filter-select"
-                  value={mesGraficoFornecedor}
-                  onChange={(e) => setMesGraficoFornecedor(e.target.value)}
-                >
-                  <option value="Todos">Todos</option>
-                  {meses.map((mes) => (
-                    <option key={mes} value={mes}>
-                      {mes}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="chart-area">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={grafico3Data}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="nome" />
-                  <YAxis tickFormatter={(value) => formatNumero(Number(value), 0)} />
-                  <Tooltip formatter={tooltipFormatter} />
-                  <Legend />
-                  <Bar
-                    dataKey="valor"
-                    name={getMetricLabel(metricaSelecionada)}
-                    radius={[8, 8, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </article>
-
-          <article className="chart-card">
-            <div className="chart-header">
-              <h2 className="chart-title">Comparação das placas da Propriedade selecionada</h2>
-              <p className="chart-subtitle">
-                Métrica: {getMetricLabel(metricaSelecionada)}
-              </p>
-            </div>
-
-            <div className="chart-area">
-              {propriedadeSelecionada ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={grafico4Data}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="placa" />
-                    <YAxis tickFormatter={(value) => formatNumero(Number(value), 0)} />
-                    <Tooltip formatter={tooltipFormatter} />
-                    <Legend />
-                    <Bar
-                      dataKey="valor"
-                      name={propriedadeSelecionada}
-                      radius={[8, 8, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <EmptyChart message="Nenhuma Propriedade selecionada" />
-              )}
-            </div>
-          </article>
+          <GraficosSegundaLinha
+            meses={meses}
+            mesGraficoFornecedor={mesGraficoFornecedor}
+            setMesGraficoFornecedor={setMesGraficoFornecedor}
+            grafico3Data={grafico3Data}
+            grafico4Data={grafico4Data}
+            propriedadeSelecionada={propriedadeSelecionada}
+            metricaLabel={metricaLabel}
+            tooltipFormatter={tooltipFormatter}
+            formatNumero={formatNumero}
+          />
         </section>
       </div>
     </div>

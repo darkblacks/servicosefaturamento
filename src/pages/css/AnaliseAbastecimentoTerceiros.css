@@ -231,3 +231,24 @@ body,
     height: 340px;
   }
 }
+
+.chart-card--full {
+  grid-column: 1 / -1;
+}
+
+.charts-grid--inside {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.chart-card--inner {
+  box-shadow: none;
+  border: 1px solid #e5e7eb;
+}
+
+@media (max-width: 900px) {
+  .charts-grid--inside {
+    grid-template-columns: 1fr;
+  }
+}
