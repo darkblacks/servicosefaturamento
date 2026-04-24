@@ -15,6 +15,7 @@ type GraficoEvolucaoData = {
   totalLitros: number;
   diferencaMesAnterior: number;
   totalDiferenca: number;
+  diferencaAcumuladaAno: number;
 };
 
 type Props = {
@@ -30,6 +31,19 @@ function EmptyChart({ message }: { message: string }) {
   return <div className="empty-chart">{message}</div>;
 }
 
+function formatarMoeda(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
+
+function corDiferenca(value: number) {
+  if (value > 0) return "#dc2626";
+  if (value < 0) return "#16a34a";
+  return "#64748b";
+}
+
 function TooltipGraficoGeral({
   active,
   payload,
@@ -43,9 +57,7 @@ function TooltipGraficoGeral({
   const valor = item?.valor ?? 0;
   const diferenca = item?.diferencaMesAnterior ?? 0;
   const totalDiferenca = item?.totalDiferenca ?? 0;
-
-  const corTotalDiferenca =
-    totalDiferenca > 0 ? "#dc2626" : totalDiferenca < 0 ? "#16a34a" : "#64748b";
+  const diferencaAcumuladaAno = item?.diferencaAcumuladaAno ?? 0;
 
   return (
     <div className="custom-tooltip">
@@ -63,11 +75,15 @@ function TooltipGraficoGeral({
 
       <div className="custom-tooltip__line">
         <span>Total da diferença:</span>
-        <strong style={{ color: corTotalDiferenca }}>
-          {new Intl.NumberFormat("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          }).format(totalDiferenca)}
+        <strong style={{ color: corDiferenca(totalDiferenca) }}>
+          {formatarMoeda(totalDiferenca)}
+        </strong>
+      </div>
+
+      <div className="custom-tooltip__line">
+        <span>Diferença Acumulada Ano:</span>
+        <strong style={{ color: corDiferenca(diferencaAcumuladaAno) }}>
+          {formatarMoeda(diferencaAcumuladaAno)}
         </strong>
       </div>
     </div>

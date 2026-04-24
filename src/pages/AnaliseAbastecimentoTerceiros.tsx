@@ -356,21 +356,29 @@ const grafico1Data = useMemo(() => {
         totalLitros,
         diferencaMesAnterior: 0,
         totalDiferenca: 0,
+        diferencaAcumuladaAno: 0,
       };
     })
     .sort((a, b) => a.mes.localeCompare(b.mes));
+
+  let acumuladoAno = 0;
 
   return dados.map((item, index) => {
     const anterior = dados[index - 1];
     const diferencaMesAnterior = anterior ? item.valor - anterior.valor : 0;
 
+    const totalDiferenca =
+      metricaSelecionada === "rsLitro"
+        ? diferencaMesAnterior * item.totalLitros
+        : diferencaMesAnterior;
+
+    acumuladoAno += totalDiferenca;
+
     return {
       ...item,
       diferencaMesAnterior,
-      totalDiferenca:
-        metricaSelecionada === "rsLitro"
-          ? diferencaMesAnterior * item.totalLitros
-          : diferencaMesAnterior,
+      totalDiferenca,
+      diferencaAcumuladaAno: acumuladoAno,
     };
   });
 }, [baseSemFiltroPlaca, metricaSelecionada]);
@@ -409,21 +417,29 @@ const grafico2Data = useMemo(() => {
         totalLitros,
         diferencaMesAnterior: 0,
         totalDiferenca: 0,
+        diferencaAcumuladaAno: 0,
       };
     })
     .sort((a, b) => a.mes.localeCompare(b.mes));
+
+  let acumuladoAno = 0;
 
   return dados.map((item, index) => {
     const anterior = dados[index - 1];
     const diferencaMesAnterior = anterior ? item.valor - anterior.valor : 0;
 
+    const totalDiferenca =
+      metricaSelecionada === "rsLitro"
+        ? diferencaMesAnterior * item.totalLitros
+        : diferencaMesAnterior;
+
+    acumuladoAno += totalDiferenca;
+
     return {
       ...item,
       diferencaMesAnterior,
-      totalDiferenca:
-        metricaSelecionada === "rsLitro"
-          ? diferencaMesAnterior * item.totalLitros
-          : diferencaMesAnterior,
+      totalDiferenca,
+      diferencaAcumuladaAno: acumuladoAno,
     };
   });
 }, [baseComFiltrosPrincipais, placaSelecionada, metricaSelecionada]);
