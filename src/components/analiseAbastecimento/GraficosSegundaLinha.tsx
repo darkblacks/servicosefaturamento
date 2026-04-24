@@ -44,6 +44,25 @@ export default function GraficosSegundaLinha({
   tooltipFormatter,
   formatNumero,
 }: Props) {
+  function clicarFornecedor(data: unknown) {
+    const item = data as { nome?: string; payload?: { nome?: string } };
+    const fornecedor = item?.nome ?? item?.payload?.nome;
+
+    if (!fornecedor) return;
+
+    setPropriedadeSelecionada(fornecedor);
+    setPlacaSelecionada("");
+  }
+
+  function clicarPlaca(data: unknown) {
+    const item = data as { placa?: string; payload?: { placa?: string } };
+    const placa = item?.placa ?? item?.payload?.placa;
+
+    if (!placa) return;
+
+    setPlacaSelecionada(placa);
+  }
+
   return (
     <article className="chart-card chart-card--full">
       <div className="chart-header chart-header--split">
@@ -88,22 +107,10 @@ export default function GraficosSegundaLinha({
 
           <div className="chart-area">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={grafico3Data}
-                onClick={(event) => {
-                  const fornecedor = event?.activePayload?.[0]?.payload?.nome;
-
-                  if (fornecedor) {
-                    setPropriedadeSelecionada(fornecedor);
-                    setPlacaSelecionada("");
-                  }
-                }}
-              >
+              <BarChart data={grafico3Data}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="nome" />
-                <YAxis
-                  tickFormatter={(value) => formatNumero(Number(value), 0)}
-                />
+                <YAxis tickFormatter={(value) => formatNumero(Number(value), 0)} />
                 <Tooltip formatter={tooltipFormatter} />
                 <Legend />
                 <Bar
@@ -111,6 +118,7 @@ export default function GraficosSegundaLinha({
                   name={metricaLabel}
                   radius={[8, 8, 0, 0]}
                   cursor="pointer"
+                  onClick={clicarFornecedor}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -128,21 +136,10 @@ export default function GraficosSegundaLinha({
           <div className="chart-area">
             {propriedadeSelecionada ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={grafico4Data}
-                  onClick={(event) => {
-                    const placa = event?.activePayload?.[0]?.payload?.placa;
-
-                    if (placa) {
-                      setPlacaSelecionada(placa);
-                    }
-                  }}
-                >
+                <BarChart data={grafico4Data}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="placa" />
-                  <YAxis
-                    tickFormatter={(value) => formatNumero(Number(value), 0)}
-                  />
+                  <YAxis tickFormatter={(value) => formatNumero(Number(value), 0)} />
                   <Tooltip formatter={tooltipFormatter} />
                   <Legend />
                   <Bar
@@ -150,6 +147,7 @@ export default function GraficosSegundaLinha({
                     name={propriedadeSelecionada}
                     radius={[8, 8, 0, 0]}
                     cursor="pointer"
+                    onClick={clicarPlaca}
                   />
                 </BarChart>
               </ResponsiveContainer>

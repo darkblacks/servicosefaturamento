@@ -587,16 +587,18 @@ const grafico1Data = useMemo(() => {
           />
 
           <GraficosSegundaLinha
-            meses={meses}
-            mesGraficoFornecedor={mesGraficoFornecedor}
-            setMesGraficoFornecedor={setMesGraficoFornecedor}
-            grafico3Data={grafico3Data}
-            grafico4Data={grafico4Data}
-            propriedadeSelecionada={propriedadeSelecionada}
-            metricaLabel={metricaLabel}
-            tooltipFormatter={tooltipFormatter}
-            formatNumero={formatNumero}
-          />
+  meses={meses}
+  mesGraficoFornecedor={mesGraficoFornecedor}
+  setMesGraficoFornecedor={setMesGraficoFornecedor}
+  grafico3Data={grafico3Data}
+  grafico4Data={grafico4Data}
+  propriedadeSelecionada={propriedadeSelecionada}
+  setPropriedadeSelecionada={setPropriedadeSelecionada}
+  setPlacaSelecionada={setPlacaSelecionada}
+  metricaLabel={metricaLabel}
+  tooltipFormatter={tooltipFormatter}
+  formatNumero={formatNumero}
+/>
         </section>
       </div>
     </div>
